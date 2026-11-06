@@ -20,6 +20,14 @@ import { useTheme } from '@/theme/ThemeProvider';
 type Camera = { coordinates: { latitude: number; longitude: number }; zoom: number };
 const WORLD: Camera = { coordinates: { latitude: 20, longitude: 0 }, zoom: 1 };
 
+// Supabase errors (PostgrestError) are plain objects, not Error instances.
+function errorMessage(e: unknown, fallback: string) {
+  if (e && typeof e === 'object' && 'message' in e && typeof e.message === 'string') {
+    return `${fallback}: ${e.message}`;
+  }
+  return fallback;
+}
+
 export default function MapScreen() {
   const { session } = useSession();
   const { colors } = useTheme();
@@ -38,7 +46,7 @@ export default function MapScreen() {
           setPins(rows);
           setError(null);
         })
-        .catch((e) => setError(e instanceof Error ? e.message : 'Could not load map'));
+        .catch((e) => setError(errorMessage(e, 'Could not load map')));
     }, []),
   );
 
@@ -66,7 +74,7 @@ export default function MapScreen() {
       const [post] = await fetchPosts({ postId, limit: 1 });
       if (post) setSelected(post);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not open post');
+      setError(errorMessage(e, 'Could not open post'));
     } finally {
       setOpening(false);
     }
