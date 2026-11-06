@@ -35,6 +35,15 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Map',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="map" size={size} color={typeof color === 'string' ? color : colors.text} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="game"
         options={{
           title: 'Game',

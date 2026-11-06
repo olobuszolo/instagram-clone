@@ -40,7 +40,8 @@ const POST_SELECT = `
  * Posts visible to the current user (RLS hides private accounts the user
  * doesn't follow), newest first. Pass `authorId` for a single user's posts.
  */
-export async function fetchPosts(opts: { authorId?: string; before?: string; limit?: number } = {}) {
+export async function fetchPosts(opts: { authorId?: string; postId?: string; before?: string; limit?: number } = {},
+) {
   let query = supabase
     .from('posts')
     .select(POST_SELECT)
@@ -48,6 +49,7 @@ export async function fetchPosts(opts: { authorId?: string; before?: string; lim
     .order('created_at', { ascending: false })
     .limit(opts.limit ?? 20);
   if (opts.authorId) query = query.eq('author_id', opts.authorId);
+  if (opts.postId) query = query.eq('id', opts.postId);
   if (opts.before) query = query.lt('created_at', opts.before);
 
   const { data, error } = await query.overrideTypes<PostRow[], { merge: false }>();
@@ -111,4 +113,26 @@ export async function fetchProfile(userId: string) {
     .single();
   if (error) throw error;
   return data as Profile;
+}
+
+export type MapPost = {
+  post_id: string;
+  author_id: string;
+  latitude: number;
+  longitude: number;
+  location_name: string | null;
+  created_at: string;
+};
+
+/** Posts visible to me that have a location (RLS applies), newest first. */
+export async function fetchMapPosts(max = 500) {
+  const { data, error } = await supabase.rpc('get_posts_in_bounds', {
+    min_lng: -180,
+    min_lat: -90,
+    max_lng: 180,
+    max_lat: 90,
+    max_results: max,
+  });
+  if (error) throw error;
+  return (data ?? []) as MapPost[];
 }
