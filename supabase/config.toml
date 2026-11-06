@@ -1,0 +1,6 @@
+# Minimal Supabase CLI config. Run `supabase init` to regenerate the full file
+# if you need to customise ports/auth settings; migrations are what matters here.
+project_id = "instagram-clone"
+
+[db]
+major_version = 17
