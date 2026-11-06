@@ -14,7 +14,16 @@ import { Markdown } from '@/components/Markdown';
 import type { Post } from '@/lib/posts';
 import { useTheme } from '@/theme/ThemeProvider';
 
-export function PostCard({ post, onToggleLike }: { post: Post; onToggleLike: () => void }) {
+export function PostCard({
+  post,
+  onToggleLike,
+  onOpenComments,
+}: {
+  post: Post;
+  onToggleLike: () => void;
+  /** Override how comments open (e.g. when the card is shown inside a Modal). */
+  onOpenComments?: (postId: string) => void;
+}) {
   const { width } = useWindowDimensions();
   const { colors } = useTheme();
   const [index, setIndex] = useState(0);
@@ -76,7 +85,13 @@ export function PostCard({ post, onToggleLike }: { post: Post; onToggleLike: () 
             <Markdown>{post.description}</Markdown>
           </View>
         ) : null}
-        <Pressable onPress={() => router.push({ pathname: '/comments/[postId]', params: { postId: post.id } })}>
+        <Pressable
+          onPress={() =>
+            onOpenComments
+              ? onOpenComments(post.id)
+              : router.push({ pathname: '/comments/[postId]', params: { postId: post.id } })
+          }
+        >
           <Text style={[styles.muted, { color: colors.textSecondary }]}>
             {post.comment_count > 0 ? `View all ${post.comment_count} comments` : 'Add a comment…'}
           </Text>

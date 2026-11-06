@@ -1,7 +1,7 @@
 import * as Location from 'expo-location';
 import { AppleMaps, GoogleMaps, useLocationPermissions } from 'expo-maps';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -38,6 +38,7 @@ export default function MapScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Post | null>(null);
   const [opening, setOpening] = useState(false);
+  const pendingComments = useRef<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -83,6 +84,22 @@ export default function MapScreen() {
     } finally {
       setOpening(false);
     }
+  };
+
+  const pushPendingComments = () => {
+    const postId = pendingComments.current;
+    pendingComments.current = null;
+    if (postId) router.push({ pathname: '/comments/[postId]', params: { postId } });
+  };
+
+  // The post sheet is a native Modal that sits above the navigator, so a
+  // screen pushed while it is open would appear behind it. Close the sheet
+  // first and navigate once it is gone.
+  const openComments = (postId: string) => {
+    pendingComments.current = postId;
+    setSelected(null);
+    // iOS pushes from Modal's onDismiss; Android's Modal has no such callback.
+    if (Platform.OS !== 'ios') setTimeout(pushPendingComments, 300);
   };
 
   const toggleLike = async () => {
@@ -153,6 +170,7 @@ export default function MapScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setSelected(null)}
+        onDismiss={pushPendingComments}
       >
         <View style={[styles.flex, { backgroundColor: colors.background }]}>
           <Pressable onPress={() => setSelected(null)} style={styles.close} hitSlop={12}>
@@ -162,7 +180,9 @@ export default function MapScreen() {
             <FlatList
               data={[selected]}
               keyExtractor={(p) => p.id}
-              renderItem={({ item }) => <PostCard post={item} onToggleLike={toggleLike} />}
+              renderItem={({ item }) => (
+                <PostCard post={item} onToggleLike={toggleLike} onOpenComments={openComments} />
+              )}
             />
           )}
         </View>
