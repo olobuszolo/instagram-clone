@@ -32,6 +32,15 @@ function RootNavigator() {
           options={{ animation: 'fade', contentStyle: { backgroundColor: '#000' } }}
         />
         <Stack.Screen
+          name="user/[id]"
+          options={{
+            headerShown: true,
+            title: '',
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
+          }}
+        />
+        <Stack.Screen
           name="edit-profile"
           options={{
             headerShown: true,
