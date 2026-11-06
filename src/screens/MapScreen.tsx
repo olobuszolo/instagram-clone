@@ -38,7 +38,10 @@ export default function MapScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Post | null>(null);
   const [opening, setOpening] = useState(false);
-  const pendingComments = useRef<string | null>(null);
+  const pendingRoute = useRef<{
+    pathname: '/comments/[postId]' | '/vertical/[postId]';
+    postId: string;
+  } | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -86,21 +89,23 @@ export default function MapScreen() {
     }
   };
 
-  const pushPendingComments = () => {
-    const postId = pendingComments.current;
-    pendingComments.current = null;
-    if (postId) router.push({ pathname: '/comments/[postId]', params: { postId } });
+  const pushPendingRoute = () => {
+    const pending = pendingRoute.current;
+    pendingRoute.current = null;
+    if (pending) router.push({ pathname: pending.pathname, params: { postId: pending.postId } });
   };
 
   // The post sheet is a native Modal that sits above the navigator, so a
   // screen pushed while it is open would appear behind it. Close the sheet
   // first and navigate once it is gone.
-  const openComments = (postId: string) => {
-    pendingComments.current = postId;
+  const openRoute = (pathname: '/comments/[postId]' | '/vertical/[postId]', postId: string) => {
+    pendingRoute.current = { pathname, postId };
     setSelected(null);
     // iOS pushes from Modal's onDismiss; Android's Modal has no such callback.
-    if (Platform.OS !== 'ios') setTimeout(pushPendingComments, 300);
+    if (Platform.OS !== 'ios') setTimeout(pushPendingRoute, 300);
   };
+  const openComments = (postId: string) => openRoute('/comments/[postId]', postId);
+  const openVertical = (postId: string) => openRoute('/vertical/[postId]', postId);
 
   const toggleLike = async () => {
     if (!userId || !selected) return;
@@ -170,7 +175,7 @@ export default function MapScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setSelected(null)}
-        onDismiss={pushPendingComments}
+        onDismiss={pushPendingRoute}
       >
         <View style={[styles.flex, { backgroundColor: colors.background }]}>
           <Pressable onPress={() => setSelected(null)} style={styles.close} hitSlop={12}>
@@ -181,7 +186,9 @@ export default function MapScreen() {
               data={[selected]}
               keyExtractor={(p) => p.id}
               renderItem={({ item }) => (
-                <PostCard post={item} onToggleLike={toggleLike} onOpenComments={openComments} />
+                <PostCard post={item} onToggleLike={toggleLike} onOpenComments={openComments}
+                  onOpenVerticalView={openVertical}
+                />
               )}
             />
           )}
