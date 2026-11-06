@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { PostCard } from '@/components/PostCard';
 import { useSession } from '@/context/session';
 import { fetchPosts, setLiked, type Post } from '@/lib/posts';
@@ -46,8 +46,9 @@ export default function HomeScreen() {
     setPosts((prev) => prev.map(patch));
     try {
       await setLiked(post.id, userId, liked);
-    } catch {
+    } catch (e) {
       setPosts((prev) => prev.map((p) => (p.id === post.id ? post : p))); // roll back
+      Alert.alert('Could not update like', e instanceof Error ? e.message : JSON.stringify(e));
     }
   };
 

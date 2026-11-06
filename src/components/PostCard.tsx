@@ -9,6 +9,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { Markdown } from '@/components/Markdown';
 import type { Post } from '@/lib/posts';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -69,14 +71,16 @@ export function PostCard({ post, onToggleLike }: { post: Post; onToggleLike: () 
         </Pressable>
         <Text style={[styles.bold, { color: colors.text }]}>{post.like_count} likes</Text>
         {post.description ? (
-          <Text style={{ color: colors.text }}>
-            <Text style={styles.bold}>{post.author.username} </Text>
-            {post.description}
+          <View>
+            <Text style={[styles.bold, { color: colors.text }]}>{post.author.username}</Text>
+            <Markdown>{post.description}</Markdown>
+          </View>
+        ) : null}
+        <Pressable onPress={() => router.push({ pathname: '/comments/[postId]', params: { postId: post.id } })}>
+          <Text style={[styles.muted, { color: colors.textSecondary }]}>
+            {post.comment_count > 0 ? `View all ${post.comment_count} comments` : 'Add a comment…'}
           </Text>
-        ) : null}
-        {post.comment_count > 0 ? (
-          <Text style={[styles.muted, { color: colors.textSecondary }]}>View all {post.comment_count} comments</Text>
-        ) : null}
+        </Pressable>
       </View>
     </View>
   );
