@@ -57,13 +57,18 @@ export default function MapScreen() {
 
   useEffect(() => {
     if (!permission?.granted) return;
-    Location.getCurrentPositionAsync({})
-      .then((pos) =>
+    // getCurrentPositionAsync can hang when no fix is available (e.g. a
+    // simulator with no simulated location), so cap it and fall back.
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
+    Promise.race([Location.getCurrentPositionAsync({}), timeout])
+      .then((pos) => pos ?? Location.getLastKnownPositionAsync())
+      .then((pos) => {
+        if (!pos) return;
         setCamera({
           coordinates: { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
           zoom: 11,
-        }),
-      )
+        });
+      })
       .catch(() => {});
   }, [permission?.granted]);
 
