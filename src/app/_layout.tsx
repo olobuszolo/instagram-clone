@@ -18,6 +18,15 @@ function RootNavigator() {
     >
       <Stack.Protected guard={!!session}>
         <Stack.Screen name="(app)" />
+        <Stack.Screen
+          name="comments/[postId]"
+          options={{
+            headerShown: true,
+            title: 'Comments',
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
+          }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="sign-in" />

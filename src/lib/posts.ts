@@ -40,7 +40,9 @@ const POST_SELECT = `
  * Posts visible to the current user (RLS hides private accounts the user
  * doesn't follow), newest first. Pass `authorId` for a single user's posts.
  */
-export async function fetchPosts(opts: { authorId?: string; before?: string; limit?: number } = {}) {
+export async function fetchPosts(
+opts: { authorId?: string; postId?: string; before?: string; limit?: number } = {},
+) {
   let query = supabase
     .from('posts')
     .select(POST_SELECT)
@@ -48,6 +50,7 @@ export async function fetchPosts(opts: { authorId?: string; before?: string; lim
     .order('created_at', { ascending: false })
     .limit(opts.limit ?? 20);
   if (opts.authorId) query = query.eq('author_id', opts.authorId);
+  if (opts.postId) query = query.eq('id', opts.postId);
   if (opts.before) query = query.lt('created_at', opts.before);
 
   const { data, error } = await query.overrideTypes<PostRow[], { merge: false }>();
@@ -93,6 +96,67 @@ export async function setLiked(postId: string, userId: string, liked: boolean) {
     : await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', userId);
   // 23505 = already liked; treat as success.
   if (error && error.code !== '23505') throw error;
+}
+
+export type Comment = {
+  id: string;
+  post_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  author: { username: string; avatar_path: string | null };
+};
+
+type CommentRow = Omit<Comment, 'author'> & {
+  author: { username: string; avatar_path: string | null } | null;
+};
+
+const COMMENT_SELECT = `
+  id, post_id, author_id, body, created_at,
+  author:profiles!comments_author_id_fkey ( username, avatar_path )
+`;
+
+const toComment = (r: CommentRow): Comment => ({
+  ...r,
+  author: r.author ?? { username: 'unknown', avatar_path: null },
+});
+
+/** Top-level comments of a post, oldest first. */
+export async function fetchComments(postId: string) {
+  const { data, error } = await supabase
+    .from('comments')
+    .select(COMMENT_SELECT)
+    .eq('post_id', postId)
+    .is('parent_id', null)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true })
+    .overrideTypes<CommentRow[], { merge: false }>();
+  if (error) throw error;
+  return (data ?? []).map(toComment);
+}
+
+export async function addComment(postId: string, userId: string, body: string) {
+  const { data, error } = await supabase
+    .from('comments')
+    .insert({ post_id: postId, author_id: userId, body })
+    .select(COMMENT_SELECT)
+    .single<CommentRow>();
+  if (error) throw error;
+  return toComment(data);
+}
+
+/** Soft delete (clients only have column-level UPDATE on `deleted_at`). */
+export async function deleteComment(commentId: string) {
+  const { error } = await supabase
+    .from('comments')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', commentId);
+  if (error) throw error;
+}
+
+export async function fetchPost(postId: string) {
+  const posts = await fetchPosts({ postId });
+  return posts[0] ?? null;
 }
 
 export type Profile = {
