@@ -30,6 +30,13 @@
       "expo-router",
       "expo-sqlite",
       [
+        "expo-maps",
+        {
+          "requestLocationPermission": true,
+          "locationPermission": "Allow $(PRODUCT_NAME) to center the map on your location"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set a profile picture.",
