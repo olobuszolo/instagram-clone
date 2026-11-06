@@ -18,11 +18,14 @@ export function PostCard({
   post,
   onToggleLike,
   onOpenComments,
+  onOpenVerticalView,
 }: {
   post: Post;
   onToggleLike: () => void;
   /** Override how comments open (e.g. when the card is shown inside a Modal). */
   onOpenComments?: (postId: string) => void;
+  /** Override how the vertical photo view opens (same reason as above). */
+  onOpenVerticalView?: (postId: string) => void;
 }) {
   const { width } = useWindowDimensions();
   const { colors } = useTheme();
@@ -40,10 +43,25 @@ export function PostCard({
     <View style={styles.post}>
       <View style={styles.header}>
         <View style={[styles.avatar, { backgroundColor: colors.placeholder }]} />
-        <View>
+        <View style={styles.flex}>
           <Text style={[styles.bold, { color: colors.text }]}>{post.author.username}</Text>
           {post.location_name ? <Text style={[styles.muted, { color: colors.textSecondary }]}>{post.location_name}</Text> : null}
         </View>
+        {post.media.length > 1 ? (
+          <Pressable
+            onPress={() =>
+              onOpenVerticalView
+                ? onOpenVerticalView(post.id)
+                : router.push({ pathname: '/vertical/[postId]', params: { postId: post.id } })
+            }
+            hitSlop={8}
+            style={styles.verticalButton}
+            accessibilityLabel="Vertical view"
+          >
+            <Ionicons name="albums-outline" size={18} color={colors.text} />
+            <Text style={[styles.muted, { color: colors.text }]}>Vertical view</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {/* Carousel */}
@@ -103,6 +121,8 @@ export function PostCard({
 
 const styles = StyleSheet.create({
   post: { marginBottom: 16 },
+  flex: { flex: 1 },
+  verticalButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
   avatar: { width: 32, height: 32, borderRadius: 16 },
   padded: { paddingHorizontal: 12, paddingTop: 8, gap: 4 },

@@ -28,6 +28,10 @@ function RootNavigator() {
           }}
         />
         <Stack.Screen
+          name="vertical/[postId]"
+          options={{ animation: 'fade', contentStyle: { backgroundColor: '#000' } }}
+        />
+        <Stack.Screen
           name="edit-profile"
           options={{
             headerShown: true,
