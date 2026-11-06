@@ -100,15 +100,61 @@ export type Profile = {
   username: string;
   full_name: string | null;
   bio: string | null;
+  avatar_path: string | null;
   is_private: boolean;
 };
+
+export const BIO_MAX_LENGTH = 500; // matches the profiles.bio check constraint
 
 export async function fetchProfile(userId: string) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, bio, is_private')
+    .select('id, username, full_name, bio, avatar_path, is_private')
     .eq('id', userId)
     .single();
   if (error) throw error;
   return data as Profile;
+}
+
+/** The `avatars` bucket is public, so no URL signing is needed. */
+export function avatarUrl(path: string | null | undefined) {
+  if (!path) return null;
+  return supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+}
+
+export async function updateBio(userId: string, bio: string) {
+  const trimmed = bio.trim();
+  const { error } = await supabase
+    .from('profiles')
+    .update({ bio: trimmed.length > 0 ? trimmed : null })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+/**
+ * Uploads a new avatar to `avatars/{userId}/{timestamp}.{ext}` (a fresh path
+ * busts image caches), saves it on the profile and removes the previous file.
+ * Returns the new storage path.
+ */
+export async function uploadAvatar(
+  userId: string,
+  asset: { uri: string; mimeType?: string | null },
+  previousPath?: string | null,
+) {
+  const contentType =
+    asset.mimeType === 'image/png' || asset.mimeType === 'image/webp' ? asset.mimeType : 'image/jpeg';
+  const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${userId}/${Date.now()}.${ext}`;
+
+  const body = await (await fetch(asset.uri)).arrayBuffer();
+  const { error: uploadError } = await supabase.storage.from('avatars').upload(path, body, { contentType });
+  if (uploadError) throw uploadError;
+
+  const { error } = await supabase.from('profiles').update({ avatar_path: path }).eq('id', userId);
+  if (error) {
+    await supabase.storage.from('avatars').remove([path]);
+    throw error;
+  }
+  if (previousPath) await supabase.storage.from('avatars').remove([previousPath]);
+  return path;
 }
