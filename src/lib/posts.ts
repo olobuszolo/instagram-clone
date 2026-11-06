@@ -176,3 +176,35 @@ export async function fetchProfile(userId: string) {
   if (error) throw error;
   return data as Profile;
 }
+
+export type MapPost = {
+  post_id: string;
+  author_id: string;
+  latitude: number;
+  longitude: number;
+  location_name: string | null;
+  created_at: string;
+};
+
+/** Posts visible to me that have a location (RLS applies), newest first. */
+export async function fetchMapPosts(max = 500) {
+  // PostGIS geography rejects boxes with a 180°-long edge ("Antipodal edge
+  // detected"), so the world is queried as four 90°-wide strips, lat ±89.
+  const strips = [-180, -90, 0, 90].map((minLng) =>
+    supabase.rpc('get_posts_in_bounds', {
+      min_lng: minLng,
+      min_lat: -89,
+      max_lng: minLng + 90,
+      max_lat: 89,
+      max_results: max,
+    }),
+  );
+  const byId = new Map<string, MapPost>();
+  for (const { data, error } of await Promise.all(strips)) {
+    if (error) throw error;
+    for (const p of (data ?? []) as MapPost[]) byId.set(p.post_id, p);
+  }
+  return [...byId.values()]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, max);
+}
