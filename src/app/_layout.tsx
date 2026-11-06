@@ -28,6 +28,15 @@ function RootNavigator() {
           }}
         />
         <Stack.Screen
+          name="user/[id]"
+          options={{
+            headerShown: true,
+            title: '',
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
+          }}
+        />
+        <Stack.Screen
           name="edit-profile"
           options={{
             headerShown: true,
