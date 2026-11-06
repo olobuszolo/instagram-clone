@@ -3,9 +3,11 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-nativ
 import { PostCard } from '@/components/PostCard';
 import { useSession } from '@/context/session';
 import { fetchPosts, setLiked, type Post } from '@/lib/posts';
+import { useTheme } from '@/theme/ThemeProvider';
 
 export default function HomeScreen() {
   const { session } = useSession();
+  const { colors } = useTheme();
   const userId = session?.user.id;
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export default function HomeScreen() {
       onRefresh={onRefresh}
       ListEmptyComponent={
         <View style={styles.center}>
-          <Text style={error ? styles.error : styles.muted}>
+          <Text style={error ? [styles.error, { color: colors.danger }] : { color: colors.textSecondary }}>
             {error ?? 'No posts yet.'}
           </Text>
         </View>
@@ -77,6 +79,5 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  muted: { color: '#888' },
-  error: { color: '#c00', textAlign: 'center' },
+  error: { textAlign: 'center' },
 });

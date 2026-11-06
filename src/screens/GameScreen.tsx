@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@/theme/ThemeProvider';
 
 const EMOJIS = ['🐶', '🍕', '🚀', '🎸', '🌵', '🍩', '⚽', '🦄'];
 
@@ -15,6 +16,7 @@ function createDeck(): Card[] {
 }
 
 export default function GameScreen() {
+  const { colors } = useTheme();
   const [cards, setCards] = useState<Card[]>(createDeck);
   const [flipped, setFlipped] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
@@ -53,8 +55,8 @@ export default function GameScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Memory Match</Text>
-      <Text style={styles.moves}>Moves: {moves}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Memory Match</Text>
+      <Text style={[styles.moves, { color: colors.textSecondary }]}>Moves: {moves}</Text>
       <View style={styles.grid}>
         {cards.map((card, i) => {
           const visible = card.matched || flipped.includes(i);
@@ -62,7 +64,12 @@ export default function GameScreen() {
             <Pressable
               key={card.id}
               onPress={() => onPress(i)}
-              style={[styles.card, visible && styles.cardVisible, card.matched && styles.cardMatched]}
+              style={[
+                styles.card,
+                { backgroundColor: colors.placeholder },
+                visible && [styles.cardVisible, { backgroundColor: colors.background }],
+                card.matched && styles.cardMatched,
+              ]}
               accessibilityLabel={visible ? card.emoji : 'Hidden card'}
             >
               <Text style={styles.emoji}>{visible ? card.emoji : '?'}</Text>
@@ -70,9 +77,9 @@ export default function GameScreen() {
           );
         })}
       </View>
-      {won && <Text style={styles.win}>🎉 You won in {moves} moves!</Text>}
-      <Pressable style={styles.button} onPress={restart}>
-        <Text style={styles.buttonText}>{won ? 'Play again' : 'Restart'}</Text>
+      {won && <Text style={[styles.win, { color: colors.text }]}>🎉 You won in {moves} moves!</Text>}
+      <Pressable style={[styles.button, { backgroundColor: colors.text }]} onPress={restart}>
+        <Text style={[styles.buttonText, { color: colors.background }]}>{won ? 'Play again' : 'Restart'}</Text>
       </Pressable>
     </View>
   );
@@ -81,21 +88,20 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 },
   title: { fontSize: 24, fontWeight: '700' },
-  moves: { marginVertical: 8, color: '#555' },
+  moves: { marginVertical: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', width: 4 * 76, justifyContent: 'center' },
   card: {
     width: 70,
     height: 70,
     margin: 3,
     borderRadius: 10,
-    backgroundColor: '#ddd',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardVisible: { backgroundColor: '#fff', borderWidth: 2, borderColor: '#999' },
+  cardVisible: { borderWidth: 2, borderColor: '#999' },
   cardMatched: { borderColor: '#4caf50', opacity: 0.7 },
   emoji: { fontSize: 32 },
   win: { marginTop: 12, fontSize: 18, fontWeight: '600' },
-  button: { marginTop: 16, backgroundColor: '#000', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
-  buttonText: { color: '#fff', fontWeight: '600' },
+  button: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  buttonText: { fontWeight: '600' },
 });

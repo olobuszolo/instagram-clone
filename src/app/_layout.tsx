@@ -1,17 +1,21 @@
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SessionProvider, useSession } from '@/context/session';
+import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { session, isLoading } = useSession();
+  const { colors } = useTheme();
 
   if (isLoading) return null;
   SplashScreen.hide();
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
+    >
       <Stack.Protected guard={!!session}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
@@ -23,11 +27,18 @@ function RootNavigator() {
   );
 }
 
+function ThemedStatusBar() {
+  const { scheme } = useTheme();
+  return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
+}
+
 export default function RootLayout() {
   return (
     <SessionProvider>
-      <RootNavigator />
-      <StatusBar style="auto" />
+      <ThemeProvider>
+        <RootNavigator />
+        <ThemedStatusBar />
+      </ThemeProvider>
     </SessionProvider>
   );
 }
