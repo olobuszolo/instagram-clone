@@ -27,6 +27,16 @@ function RootNavigator() {
             headerTintColor: colors.text,
           }}
         />
+        <Stack.Screen
+          name="edit-profile"
+          options={{
+            headerShown: true,
+            title: 'Edit profile',
+            presentation: 'modal',
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
+          }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="sign-in" />
